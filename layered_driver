@@ -1,0 +1,40 @@
+// UART_config.h
+typedef struct {
+    uint32_t baudRate;
+    uint8_t parity;
+    uint8_t stopBits;
+} UART_config_t;
+
+// MCAL_UART.c
+void MCAL_UART_Init(UART_config_t* config) {
+    SIM->SCGC4 |= SIM_SCGC4_UART0_MASK;
+    UART0->BDH = 0x00;
+    UART0->BDL = 0x1A; // Baudrate fijo
+    UART0->C1 = 0x00;
+    UART0->C2 |= UART_C2_TE_MASK;
+}
+
+void MCAL_UART_SendChar(char c) {
+    while(!(UART0->S1 & UART_S1_TDRE_MASK));
+    UART0->D = c;
+}
+
+// HAL_UART.c
+void HAL_UART_Init(UART_config_t* config) {
+    MCAL_UART_Init(config);
+}
+
+void HAL_UART_SendChar(char c) {
+    MCAL_UART_SendChar(c);
+}
+
+void HAL_UART_SendString(char* str) {
+    while(*str) {
+        HAL_UART_SendChar(*str++);
+    }
+}
+
+// main.c
+UART_config_t myUART = { .baudRate = 9600, .parity = 0, .stopBits = 1 };
+HAL_UART_Init(&myUART);
+HAL_UART_SendString("Hi");
